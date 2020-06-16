@@ -10,6 +10,7 @@ echo "Releasing version: $VERSION"
 git stash
 git checkout -b $BRANCH
 
+rm -rf lambda-release || true
 ./build-lambda.sh
 
 git add -f lambda-release/**
