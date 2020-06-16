@@ -1,3 +1,5 @@
 .idea
 .terraform
-
+lambda-release
+node_modules
+terraform.tfstate*
