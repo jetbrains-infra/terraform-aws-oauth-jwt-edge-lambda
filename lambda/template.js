@@ -4,10 +4,13 @@
 // base64 -d <key.base64 >key.der
 // openssl rsa -pubin -inform DER -in key.base64
 
-export const CLIENT_SECRET = `
+const rsa_key = "THIS IS MOCK VARIABLE, MAKE SURE TERRAFORM REPLACED IT"
+
+const CLIENT_SECRET = `
 
 ${rsa_key}
 
 `.trim();
 
 
+exports.CLIENT_SECRET = CLIENT_SECRET;
