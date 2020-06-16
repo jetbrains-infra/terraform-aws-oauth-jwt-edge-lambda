@@ -5,11 +5,6 @@ locals {
   lambda_files = [for file in fileset(local.lambda_base, "**"): file if file != local.lambda_template]
 }
 
-variable "jwt_public_key" {
-  type = string
-  description = "Pass JWT token verification public key in PEM format"
-}
-
 data "archive_file" "auth_lambda" {
   type = "zip"
   output_path = "${path.module}/.terraform/lambda-release.zip"
