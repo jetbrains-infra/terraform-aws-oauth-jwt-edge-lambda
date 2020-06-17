@@ -15,3 +15,6 @@ output "qualified_arn" {
   value = module.function.qualified_arn
 }
 
+output "cloudfront_event_type" {
+  value = "viewer-request"
+}
