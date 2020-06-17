@@ -41,9 +41,8 @@ function handler(request, callback) {
     } else {
         callback(null, {
             status: '403',
-            body: JSON.stringify({
-                message: 'Unauthorized'
-            })
+            statusDescription: 'Not Authorized by JetBrains',
+            body: 'Not Authorized by JetBrains'
         });
     }
 }

@@ -14,6 +14,7 @@ docker run -it --rm -v $(pwd)/lambda-release:/build -w /build node:12 npm instal
 
 ##smoke test to make sure the code is not broken
 docker run -it --rm -v $(pwd)/lambda-release:/build -w /build node:12 node lambda.js
+docker run -it --rm -v $(pwd)/lambda-release:/build -w /build node:12 node test.js
 
 cp -f lambda-release/package-lock.json lambda/
 
