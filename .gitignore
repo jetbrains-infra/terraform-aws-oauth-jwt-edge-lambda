@@ -1,6 +1,7 @@
 .idea
 .terraform
 lambda-release
+grab-release
 node_modules
 terraform.tfstate*
 *-generated.json

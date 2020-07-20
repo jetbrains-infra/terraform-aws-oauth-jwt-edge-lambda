@@ -42,5 +42,5 @@ const jwks = 'https://oauth.account.jetbrains.com/.well-known/jwks.json';
     const resultData = JSON.stringify(result, null, '  ');
     console.log(resultData);
 
-    fs.writeFileSync("../lambda/jwks-generated.json", resultData);
+    fs.writeFileSync("./jwks-generated.json", resultData);
 })();
