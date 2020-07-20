@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { CLIENT_SECRET } = require('./template');
+const { CLIENT_SECRET, CLIENT_ALG } = require('./template');
 
 function parseToken(headers) {
     //see https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-examples.html
@@ -21,7 +21,7 @@ function checkToken(token) {
     if (!token) return false
 
     try {
-        const payload = jwt.verify(token, CLIENT_SECRET, {algorithm: ['RS512']});
+        const payload = jwt.verify(token, CLIENT_SECRET, {algorithm: [CLIENT_ALG]});
         //TODO: check the token if necessary
         return true
     } catch (e) {

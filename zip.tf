@@ -13,6 +13,7 @@ data "archive_file" "auth_lambda" {
     filename = local.lambda_template
     content = templatefile("${local.lambda_base}/${local.lambda_template}", {
       rsa_key = var.jwt_public_key
+      rsa_alg = var.jwt_alg
     })
   }
 
