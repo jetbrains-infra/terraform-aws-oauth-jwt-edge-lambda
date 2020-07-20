@@ -1,0 +1,6 @@
+{
+  "name": "auth-lambda",
+  "dependencies": {
+    "jsonwebtoken": "8.5.1"
+  }
+}
