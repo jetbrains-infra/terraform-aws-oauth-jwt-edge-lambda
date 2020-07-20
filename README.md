@@ -5,8 +5,8 @@ public key
 
 See branches in this repository for specific versions
 of the labda adjusted for
-- jetbrains.team
-- JetBrains Account
+- jetbrains.team in the `trunk-jetbrains-team` branch
+- JetBrains Account in the `trunk-jba` branch
 
 
 Please consider cherry-picking the major bug-fixes between branches
