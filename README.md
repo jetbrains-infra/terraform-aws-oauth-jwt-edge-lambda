@@ -30,3 +30,22 @@ public key
 
 
 ```
+
+
+## Releaes
+
+This repository uses NPM to deliver necessary packages to work. It means, we need to have 
+a specific process to prepare a code that is able work in AWS Lambda@Edge environment. 
+
+There are different way to implement the delivery, we decided to pack the binaries into the
+release branchen. These branches are designed ONLY for use from Terraform, not for a later
+development. 
+
+Use the `build-release.sh` script to create a next release branch from the current sources. 
+The script runs all necessary tests and preparations. It's by design that we include 
+`node_modules` into a release branch
+
+
+
+
+
