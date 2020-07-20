@@ -1,8 +1,6 @@
 {
   "name": "auth-lambda",
   "dependencies": {
-    "jsonwebtoken": "8.5.1",
-    "jwks-rsa": "^1.8.1",
-    "ms": "^2.1.2"
+    "jsonwebtoken": "8.5.1"
   }
 }

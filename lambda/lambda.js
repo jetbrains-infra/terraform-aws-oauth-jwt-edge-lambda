@@ -1,34 +1,14 @@
-const ms = require('ms');
 const jwt = require('jsonwebtoken');
-const jwksClient = require('jwks-rsa');
-
-const jwks = jwksClient({
-    jwksUri: 'https://oauth.account.jetbrains.com/.well-known/jwks.json',
-
-    cache: true,
-    cacheMaxEntries: 16,
-    cacheMaxAge: ms('7 days'),
-
-    rateLimit: true,
-    jwksRequestsPerMinute: 1
-});
-
-/// warm-up
-const warmupPromise = new Promise(((resolve) => {
-    jwks.getSigningKeys(() => resolve());
-}))
+// if the file is missing, make sure build-lambda.js was executed
+const {alg: jwtAlgorithm, keys: jwtKeys} = require('./jwks-generated.json');
 
 function jwksGetKey(header, callback) {
-    //we wait for the warmup to complete
-    warmupPromise.then(() => {
-        jwks.getSigningKey(header.kid, function (err, key) {
-            if (err != null) {
-                callback(err, null);
-            } else {
-                callback(null, key.getPublicKey());
-            }
-        });
-    });
+    const key = jwtKeys[header.kid];
+    if (key == null) {
+        callback(new Error("Unknown kid"), null);
+    } else {
+        callback(null, key);
+    }
 }
 
 function parseToken(headers) {
@@ -84,7 +64,7 @@ function handler(request, callback) {
     }
 
     try {
-        jwt.verify(token, jwksGetKey, {}, (err, payload) => {
+        jwt.verify(token, jwksGetKey, { algorithm: jwtAlgorithm}, (err, payload) => {
             try {
                 return handleJwtReply(err, payload);
             } catch (err) {

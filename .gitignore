@@ -3,3 +3,4 @@
 lambda-release
 node_modules
 terraform.tfstate*
+*-generated.json
