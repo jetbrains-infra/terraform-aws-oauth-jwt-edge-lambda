@@ -48,5 +48,5 @@ development.
 
 Use the `build-release.sh` script to create a next release branch from the current sources. 
 The script runs all necessary tests and preparations. It's by design that we include 
-`node_modules` into a release branch
+`node_modules` into a release branch. Next create a release via GitHub UI.
 
