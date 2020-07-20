@@ -11,7 +11,8 @@ set -e -x -u
 rm -rf lambda-release || true
 mkdir -p "lambda-release" || true
 cp -rf lambda/ lambda-release
-rm -rf lambda-release/node_modules
+rm -rf lambda-release/node_modules || true
+rm -rf lambda-release/package-lock.json || true
 
 ## deal with lambda preparations
 docker run -it --rm -v $(pwd)/lambda-release:/build -w /build node:12 npm install
@@ -20,5 +21,8 @@ docker run -it --rm -v $(pwd)/lambda-release:/build -w /build node:12 npm instal
 docker run -it --rm -v $(pwd)/lambda-release:/build -w /build node:12 node lambda.js
 docker run -it --rm -v $(pwd)/lambda-release:/build -w /build node:12 node test.js
 
-cp -f lambda-release/package-lock.json lambda/
 rm -f lambda-release/test.js
+
+cp -fv lambda-release/package-lock.json lambda/
+git add -f lambda/package-lock.json
+
