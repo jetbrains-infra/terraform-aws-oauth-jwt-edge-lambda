@@ -1,5 +1,7 @@
 const {handler} = require('./lambda')
 
+const token = "PUT YOUR TOKEN HERE";
+
 const exampleEvent = {
     "Records": [
         {
@@ -13,7 +15,7 @@ const exampleEvent = {
                     "uri": "/picture.jpg",
                     "headers": {"authorization" : [
                             {
-                                "value": "Bearer CENSORED TOKEN"
+                                "value": "Bearer " + token,
                             }],
                         "host": [
                             {
