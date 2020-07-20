@@ -6,7 +6,7 @@ variable "jwt_public_key" {
 variable "jwt_alg" {
   type = string
   description = "The JWT encryption algorithm"
-  default = 'RS256'
+  default = "RS256"
 }
 
 variable "lambda_name" {
