@@ -3,6 +3,9 @@ that does validation of JWT token with a given
 public key
 
 
+This branch contains the code specific to login with `jetbrains.team` service. 
+
+
 ## Usage Example
 
 ```tf
