@@ -4,7 +4,7 @@ cd "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 set -e -x -u
 
 VERSION=$1
-BRANCH="release-$VERSION"
+BRANCH="release-jbt-$VERSION"
 echo "Releasing version: $VERSION"
 
 git stash
