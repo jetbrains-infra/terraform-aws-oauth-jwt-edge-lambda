@@ -3,6 +3,8 @@ that does validation of JWT token with a given
 public key
 
 
+In this branch we focus on the JetBrains Account support.
+
 ## Usage Example
 
 ```tf

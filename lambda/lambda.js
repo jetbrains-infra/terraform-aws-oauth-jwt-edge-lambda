@@ -22,10 +22,7 @@ function checkToken(token) {
 
     try {
         const payload = jwt.verify(token, CLIENT_SECRET, {algorithm: ['RS512']});
-        if (payload.orgDomain !== 'jetbrains') {
-            console.log('orgDomain is not correct:',JSON.stringify(payload))
-            return false
-        }
+        //TODO: check the token if necessary
         return true
     } catch (e) {
         // token exists but it-is invalid
