@@ -2,10 +2,10 @@ const jwt = require('jsonwebtoken');
 const jwkToPem = require('jwk-to-pem');
 
 // if the file is missing, make sure build-lambda.js was executed
-const {CLIENT_SECRET: {jba: jba_keys_data, jbt: jbt_keys_data}} = require('./jwks-generated.js');
+const {CLIENT_SECRET: {jba: jba_keys_data = {}, jbt: jbt_keys_data = {}}} = require('./jwks-generated.js');
 
 function prepareKey(modeName, json, handler) {
-    console.log("The JWKS:")
+    console.log("The JWKS for " + modeName + " :")
     console.log(JSON.stringify(json, null, '  '))
 
     const keys = json.keys || [];
