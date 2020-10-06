@@ -76,9 +76,8 @@ async function handler(request) {
         return notAuthorized()
     }
 
-    let result = await allJwtKeys.reduce((acc, jwtKey) => acc.then(previousResult => {
-        if (previousResult === true) return true;
-        return new Promise((resolve) => {
+    for (const jwtKey of allJwtKeys) {
+        let result = await new Promise((resolve) => {
             jwt.verify(token, jwtKey.jwksGetKey, {algorithm: jwtKey.algorithm}, (err, payload) => {
                 if (err != null || payload === undefined || payload === null) {
                     console.log(jwtKey.modeName + ': Failed to verify token.', (err.message || err));
@@ -89,19 +88,17 @@ async function handler(request) {
                 resolve(jwtKey.verifyCallback(payload));
             });
         });
-    }), Promise.resolve(false));
 
-    if (result === true) {
-        return request
-    } else {
-        return notAuthorized()
+        if (result === true) return request;
     }
+
+    return notAuthorized()
 }
 
 exports.handler = async (event, context) => {
     try {
         const request = event.Records[0].cf.request;
-        return handler(request)
+        return await handler(request)
     } catch (err) {
         // token exists but it-is invalid
         console.log('Crashed to verify a token', err);
