@@ -17,7 +17,7 @@ if [ "${1:-X}" == "dev" ]; then
   terraform apply -auto-approve -var generate_template_locally=true lambda-zip
 
   echo "Running test.js, make sure you have valid token in the code"
-  node lambda-release/test.js
+  node lambda/test.js
 
   exit 0;
 fi
