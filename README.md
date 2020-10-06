@@ -1,13 +1,9 @@
-A Terraform module that creates a Lambda@Edge 
-that does validation of JWT token with a given
-public key
+This Labdba@Edge implements CloudFront callback to support
+authentication for JWT token from JetBrains.team and JetBrains Account. 
 
-
-In this branch we focus on the JetBrains Account support.
-
-
-See the `get-jba-keys` module to get the actual JBA keys for this script.
-
+The implementation fetches all validation keys at the deployment phase and
+embeds them into the code. It is your responsibility to make sure you 
+re-deploy the lambda often enough to replicate the changes.
 
 ## Usage Example
 
