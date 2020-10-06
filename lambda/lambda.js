@@ -1,15 +1,50 @@
 const jwt = require('jsonwebtoken');
-// if the file is missing, make sure build-lambda.js was executed
-const {alg: jwtAlgorithm, keys: jwtKeys} = require('./jwks-generated.json');
+const jwkToPem = require('jwk-to-pem');
 
-function jwksGetKey(header, callback) {
-    const key = jwtKeys[header.kid];
-    if (key == null) {
-        callback(new Error("Unknown kid"), null);
-    } else {
-        callback(null, key);
+// if the file is missing, make sure build-lambda.js was executed
+const {CLIENT_SECRET: {jba: jba_keys_data, jbt: jbt_keys_data}} = require('./jwks-generated.js');
+
+function prepareKey(modeName, json, handler) {
+    console.log("The JWKS:")
+    console.log(JSON.stringify(json, null, '  '))
+
+    const keys = json.keys || [];
+    const selectedKeys = [];
+    for (const key of keys) {
+        const ourAlg = key.alg;
+        if (!ourAlg) throw new Error("Unexpected different key alg: " + ourAlg)
+        const ourKid = key.kid || null;
+        const keyPem = jwkToPem(key);
+        selectedKeys.push({
+                modeName: modeName,
+                jwksGetKey: function (header, callback) {
+                    let theirKid = header.kid || null;
+                    let theirAlg = header.alg;
+
+                    if (ourAlg !== theirAlg) {
+                        callback(new Error("Unknown alg"), null);
+                        return;
+                    }
+
+                    if (ourKid !== theirKid) {
+                        callback(new Error("Unknown kid"), null);
+                        return;
+                    }
+
+                    callback(null, keyPem);
+                },
+
+                verifyCallback: payload => handler(payload)
+            }
+        );
     }
+
+    return selectedKeys;
 }
+
+const jbaJwtKeys = prepareKey('JBA', jba_keys_data, ({sub = ''}) => sub.toString().toLowerCase().endsWith("@jetbrains.com"))
+const jbtJwtKeys = prepareKey('JBT', jbt_keys_data, ({orgDomain = ''}) => orgDomain.toString() === 'jetbrains');
+const allJwtKeys = [...jbtJwtKeys, ...jbaJwtKeys];
 
 function parseToken(headers) {
     //see https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-examples.html
@@ -27,60 +62,49 @@ function parseToken(headers) {
     return null;
 }
 
-function notAuthorized(callback) {
-    callback(null, {
+function notAuthorized() {
+    return {
         status: '403',
         statusDescription: 'Not Authorized by JetBrains',
         body: 'Not Authorized by JetBrains'
-    });
+    };
 }
 
-function handler(request, callback) {
+async function handler(request) {
     const token = parseToken(request.headers)
-
     if (!token) {
-        notAuthorized(callback)
-        return;
+        return notAuthorized()
     }
 
-    function handleJwtReply(err, payload) {
-        if (err != null) {
-            // token exists but it-is invalid
-            console.log('Failed to verify token.', err);
-            notAuthorized(callback);
-            return;
-        }
+    let result = await allJwtKeys.reduce((acc, jwtKey) => acc.then(previousResult => {
+        if (previousResult === true) return true;
+        return new Promise((resolve) => {
+            jwt.verify(token, jwtKey.jwksGetKey, {algorithm: jwtKey.algorithm}, (err, payload) => {
+                if (err != null || payload === undefined || payload === null) {
+                    console.log(jwtKey.modeName + ': Failed to verify token.', (err.message || err));
+                    resolve(false);
+                    return;
+                }
+                console.log(jwtKey.modeName + ": payload " + JSON.stringify(payload, null, '  '));
+                resolve(jwtKey.verifyCallback(payload));
+            });
+        });
+    }), Promise.resolve(false));
 
-        const {sub = ''} = payload;
-        if (!sub.toLowerCase().endsWith("@jetbrains.com")) {
-            // token exists but it-is invalid
-            console.log('Invalid email address', err);
-            notAuthorized(callback);
-            return;
-        }
-
-        //allow the request
-        callback(null, request)
+    if (result === true) {
+        return request
+    } else {
+        return notAuthorized()
     }
+}
 
+exports.handler = async (event, context) => {
     try {
-        jwt.verify(token, jwksGetKey, { algorithm: jwtAlgorithm}, (err, payload) => {
-            try {
-                return handleJwtReply(err, payload);
-            } catch (err) {
-                // token exists but it-is invalid
-                console.log('Failed to handle a token', err);
-                notAuthorized(callback);
-            }
-        })
+        const request = event.Records[0].cf.request;
+        return handler(request)
     } catch (err) {
         // token exists but it-is invalid
         console.log('Crashed to verify a token', err);
-        notAuthorized(callback);
+        return notAuthorized();
     }
-}
-
-exports.handler = (event, context, callback) => {
-    const request = event.Records[0].cf.request;
-    handler(request, callback)
 };

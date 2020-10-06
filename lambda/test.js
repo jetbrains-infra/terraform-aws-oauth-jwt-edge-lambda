@@ -38,5 +38,4 @@ const exampleEvent = {
 
 Object.freeze(exampleEvent)
 
-handler(exampleEvent, {this_is_mock_context: true}, console.log)
-
+handler(exampleEvent, {this_is_mock_context: true}).then(console.log, console.log);
