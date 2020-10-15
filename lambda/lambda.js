@@ -75,7 +75,7 @@ function notAuthorized() {
             }],
             'content-type': [{
                 key: 'Content-Type',
-                value: 'text/html'
+                value: 'text/plain; charset=UTF-8'
             }],
             'x-content-type-options': [{
                 key: 'X-Content-Type-Options',
