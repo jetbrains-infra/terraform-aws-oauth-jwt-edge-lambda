@@ -43,8 +43,8 @@ function prepareKey(modeName, json, handler) {
     return selectedKeys;
 }
 
-const jbaJwtKeys = prepareKey('JBA', jba_keys_data, ({sub = ''}) => sub.toString().toLowerCase().endsWith("@jetbrains.com"))
-const jbtJwtKeys = prepareKey('JBT', jbt_keys_data, ({orgDomain = ''}) => orgDomain.toString() === 'jetbrains');
+const jbaJwtKeys = prepareKey('JBA', jba_keys_data, ({sub = ''}) => sub.toString().toLowerCase().endsWith("@jetbrains.com"));
+const jbtJwtKeys = prepareKey('JBT', jbt_keys_data, ({orgDomain = ''}) => orgDomain.toString().toLowerCase() === 'jetbrains');
 const allJwtKeys = [...jbtJwtKeys, ...jbaJwtKeys];
 
 function parseToken(headers) {
