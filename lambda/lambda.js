@@ -67,7 +67,21 @@ function notAuthorized() {
     return {
         status: '403',
         statusDescription: 'Not Authorized by JetBrains',
-        body: 'Not Authorized by JetBrains'
+        body: '403. Not Authorized by JetBrains',
+        headers: {
+            'cache-control': [{
+                key: 'Cache-Control',
+                value: 'no-cache, max-age=0'
+            }],
+            'content-type': [{
+                key: 'Content-Type',
+                value: 'text/html'
+            }],
+            'x-content-type-options': [{
+                key: 'X-Content-Type-Options',
+                value: 'nosniff'
+            }]
+        },
     };
 }
 
