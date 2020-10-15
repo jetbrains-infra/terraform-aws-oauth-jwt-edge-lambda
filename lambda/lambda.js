@@ -17,6 +17,7 @@ function prepareKey(modeName, json, handler) {
         const keyPem = jwkToPem(key);
         selectedKeys.push({
                 modeName: modeName,
+                algorithms: [ourAlg],
                 jwksGetKey: function (header, callback) {
                     let theirKid = header.kid || null;
                     let theirAlg = header.alg;
@@ -78,7 +79,7 @@ async function handler(request) {
 
     for (const jwtKey of allJwtKeys) {
         let result = await new Promise((resolve) => {
-            jwt.verify(token, jwtKey.jwksGetKey, {algorithm: jwtKey.algorithm}, (err, payload) => {
+            jwt.verify(token, jwtKey.jwksGetKey, {algorithms: jwtKey.algorithms}, (err, payload) => {
                 if (err != null || payload === undefined || payload === null) {
                     console.log(jwtKey.modeName + ': Failed to verify token.', (err.message || err));
                     resolve(false);
