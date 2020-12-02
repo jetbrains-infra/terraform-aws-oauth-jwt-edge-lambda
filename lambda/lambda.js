@@ -99,6 +99,11 @@ async function handler(request) {
                     resolve(false);
                     return;
                 }
+                if (Math.floor(Date.now() / 1000) + 3600 < payload.exp) {
+                    console.log(jwtKey.modeName + ': \'Expiration time\' (exp) claim is too far in the future ');
+                    resolve(false);
+                    return;
+                }
                 console.log(jwtKey.modeName + ": payload " + JSON.stringify(payload, null, '  '));
                 resolve(jwtKey.verifyCallback(payload));
             });
