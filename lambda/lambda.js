@@ -53,8 +53,8 @@ function parseToken(headers) {
     if (authorization.length > 0) {
         for (let i = 0; i < authorization.length; i++) {
             const token = authorization[i].value || ''
-            const prefix = 'Bearer ';
-            if (token.startsWith(prefix)) {
+            const prefix = 'bearer ';
+            if (token.toLowerCase().startsWith(prefix)) {
                 return token.substring(prefix.length)
             }
         }
