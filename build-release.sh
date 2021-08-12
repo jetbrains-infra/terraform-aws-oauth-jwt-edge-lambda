@@ -5,7 +5,7 @@ set -e -x -u
 
 VERSION=$1
 BRANCH="release-jba-jbt-$VERSION"
-TAG=$VERSION-jba-jbt
+TAG=v$VERSION-jba-jbt
 echo "Releasing version: $VERSION"
 
 git stash
