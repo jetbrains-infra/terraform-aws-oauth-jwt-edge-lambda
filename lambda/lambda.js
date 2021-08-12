@@ -42,7 +42,7 @@ function prepareKey(modeName, json, handler) {
     return selectedKeys;
 }
 
-const jbaJwtKeys = prepareKey('JBA', jba_keys_data, ({sub = ''}) => sub.toString().toLowerCase().endsWith("@jetbrains.com"))
+const jbaJwtKeys = prepareKey('JBA', jba_keys_data, ({email = ''}) => email.toString().toLowerCase().endsWith("@jetbrains.com"))
 const jbtJwtKeys = prepareKey('JBT', jbt_keys_data, ({orgDomain = ''}) => orgDomain.toString() === 'jetbrains');
 const allJwtKeys = [...jbtJwtKeys, ...jbaJwtKeys];
 
@@ -101,7 +101,7 @@ exports.handler = async (event, context) => {
         return await handler(request)
     } catch (err) {
         // token exists but it-is invalid
-        console.log('Crashed to verify a token', err);
+        console.log('Failed to verify a token', err);
         return notAuthorized();
     }
 };
