@@ -17,6 +17,7 @@ function prepareKey(modeName, json, handler) {
         const keyPem = jwkToPem(key);
         selectedKeys.push({
                 modeName: modeName,
+                algorithms: [ourAlg],
                 jwksGetKey: function (header, callback) {
                     let theirKid = header.kid || null;
                     let theirAlg = header.alg;
@@ -44,6 +45,7 @@ function prepareKey(modeName, json, handler) {
 
 const jbaJwtKeys = prepareKey('JBA', jba_keys_data, ({email = ''}) => email.toString().toLowerCase().endsWith("@jetbrains.com"))
 const jbtJwtKeys = prepareKey('JBT', jbt_keys_data, ({orgDomain = ''}) => orgDomain.toString() === 'jetbrains');
+
 const allJwtKeys = [...jbtJwtKeys, ...jbaJwtKeys];
 
 function parseToken(headers) {
@@ -66,7 +68,21 @@ function notAuthorized() {
     return {
         status: '403',
         statusDescription: 'Not Authorized by JetBrains',
-        body: 'Not Authorized by JetBrains'
+        body: '403. Not Authorized by JetBrains',
+        headers: {
+            'cache-control': [{
+                key: 'Cache-Control',
+                value: 'no-cache, max-age=0'
+            }],
+            'content-type': [{
+                key: 'Content-Type',
+                value: 'text/plain; charset=UTF-8'
+            }],
+            'x-content-type-options': [{
+                key: 'X-Content-Type-Options',
+                value: 'nosniff'
+            }]
+        },
     };
 }
 
@@ -78,7 +94,7 @@ async function handler(request) {
 
     for (const jwtKey of allJwtKeys) {
         let result = await new Promise((resolve) => {
-            jwt.verify(token, jwtKey.jwksGetKey, {algorithm: jwtKey.algorithm}, (err, payload) => {
+            jwt.verify(token, jwtKey.jwksGetKey, {algorithms: jwtKey.algorithms}, (err, payload) => {
                 if (err != null || payload === undefined || payload === null) {
                     console.log(jwtKey.modeName + ': Failed to verify token.', (err.message || err));
                     resolve(false);
