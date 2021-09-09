@@ -85,12 +85,12 @@ async function handler(request) {
     //see https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-examples.html
     const {authorization = []} = request.headers;
     if (authorization.length === 0) {
-        return errorResponse(401,'Missing Authorization header')
+        return errorResponse(401, 'Missing JetBrains Authorization header')
     }
 
     const token = parseAuthorizationHeader(authorization)
     if (!token) {
-        return errorResponse(401,'Failed to parse authorization token')
+        return errorResponse(401, 'Failed to parse JetBrains authorization token')
     }
 
     let allErrors = ''
@@ -100,7 +100,7 @@ async function handler(request) {
             jwt.verify(token, jwtKey.jwksGetKey, {algorithms: jwtKey.algorithms}, (err, payload) => {
                 if (err != null || payload === undefined || payload === null) {
                     console.log(jwtKey.modeName + ': Failed to verify token.', (err.message || err));
-                    allErrors += 'Failed to verify token: '+ (err.message || err) + '\n';
+                    allErrors += 'Failed to verify JetBrains authorization token: '+ (err.message || err) + '\n';
                     resolve(false);
                     return;
                 }
@@ -122,6 +122,6 @@ exports.handler = async (event, context) => {
     } catch (err) {
         // token exists but is invalid
         console.log('Crashed to verify a token', err);
-        return errorResponse(500,'Failed to verify token: ' + err);
+        return errorResponse(500, 'Failed to verify JetBrains authorization token: ' + err);
     }
 };
