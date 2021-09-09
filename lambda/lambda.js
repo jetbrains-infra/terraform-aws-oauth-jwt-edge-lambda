@@ -47,27 +47,23 @@ const jbaJwtKeys = prepareKey('JBA', jba_keys_data, ({email = '', sub = ''}) => 
 const jbtJwtKeys = prepareKey('JBT', jbt_keys_data, ({orgDomain = ''}) => orgDomain.toString().toLowerCase() === 'jetbrains');
 const allJwtKeys = [...jbtJwtKeys, ...jbaJwtKeys];
 
-function parseToken(headers) {
-    //see https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-examples.html
-    const {authorization = []} = headers;
-    if (authorization.length > 0) {
-        for (let i = 0; i < authorization.length; i++) {
-            const token = authorization[i].value || ''
-            const prefix = 'bearer ';
-            if (token.toLowerCase().startsWith(prefix)) {
-                return token.substring(prefix.length)
-            }
+function parseAuthorizationHeader(authorization) {
+    for (let i = 0; i < authorization.length; i++) {
+        const token = authorization[i].value || ''
+        const prefix = 'bearer ';
+        if (token.toLowerCase().startsWith(prefix)) {
+            return token.substring(prefix.length)
         }
     }
 
     return null;
 }
 
-function notAuthorized() {
+function errorResponse(status, message) {
     return {
-        status: '403',
-        statusDescription: 'Not Authorized by JetBrains',
-        body: '403. Not Authorized by JetBrains',
+        status: status.toString(),
+        statusDescription: message,
+        body: status.toString() + '. ' + message,
         headers: {
             'cache-control': [{
                 key: 'Cache-Control',
@@ -86,16 +82,25 @@ function notAuthorized() {
 }
 
 async function handler(request) {
-    const token = parseToken(request.headers)
-    if (!token) {
-        return notAuthorized()
+    //see https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-examples.html
+    const {authorization = []} = request.headers;
+    if (authorization.length === 0) {
+        return errorResponse(401,'Missing Authorization header')
     }
+
+    const token = parseAuthorizationHeader(authorization)
+    if (!token) {
+        return errorResponse(401,'Failed to parse authorization token')
+    }
+
+    let allErrors = ''
 
     for (const jwtKey of allJwtKeys) {
         let result = await new Promise((resolve) => {
             jwt.verify(token, jwtKey.jwksGetKey, {algorithms: jwtKey.algorithms}, (err, payload) => {
                 if (err != null || payload === undefined || payload === null) {
                     console.log(jwtKey.modeName + ': Failed to verify token.', (err.message || err));
+                    allErrors += 'Failed to verify token: '+ (err.message || err) + '\n';
                     resolve(false);
                     return;
                 }
@@ -107,7 +112,7 @@ async function handler(request) {
         if (result === true) return request;
     }
 
-    return notAuthorized()
+    return errorResponse(403, allErrors)
 }
 
 exports.handler = async (event, context) => {
@@ -115,8 +120,8 @@ exports.handler = async (event, context) => {
         const request = event.Records[0].cf.request;
         return await handler(request)
     } catch (err) {
-        // token exists but it-is invalid
+        // token exists but is invalid
         console.log('Crashed to verify a token', err);
-        return notAuthorized();
+        return errorResponse(500,'Failed to verify token: ' + err);
     }
 };
