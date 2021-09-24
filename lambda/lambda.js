@@ -62,7 +62,6 @@ function parseAuthorizationHeader(authorization) {
 function errorResponse(status, message) {
     return {
         status: status.toString(),
-        statusDescription: message,
         body: status.toString() + '. ' + message,
         headers: {
             'cache-control': [{
