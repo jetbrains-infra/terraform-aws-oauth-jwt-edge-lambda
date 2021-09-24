@@ -1,0 +1,9 @@
+
+// this text contains an JSON array of JWKS files
+const CLIENT_JWKS = {
+    'jba' : ${jba_jwks_key}
+    ,
+    'jbt' : ${jbt_jwks_key}
+}
+
+exports.CLIENT_SECRET = CLIENT_JWKS;
