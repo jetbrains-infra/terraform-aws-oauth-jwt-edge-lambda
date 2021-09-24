@@ -8,7 +8,7 @@ set -e -x -u
 
 rm -rf lambda-release || true
 mkdir -p "lambda-release" || true
-cp -rf lambda/ lambda-release
+cp -rf lambda/* lambda-release
 
 if [ "${1:-X}" == "dev" ]; then
   echo "Development mode"
