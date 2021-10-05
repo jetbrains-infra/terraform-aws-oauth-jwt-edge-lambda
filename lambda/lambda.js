@@ -99,7 +99,11 @@ async function handler(request) {
             jwt.verify(token, jwtKey.pem, {algorithms: [jwtKey.algorithms]}, (err, payload) => {
                 if (err != null || payload === undefined || payload === null) {
                     console.log(jwtKey.modeName + ': Failed to verify token.', (err.message || err));
-                    allErrors += 'Failed to verify JetBrains authorization token: '+ (err.message || err) + '\n';
+                    if (err.name === "TokenExpiredError") {
+                        allErrors += "JetBrains authorization token expired.\n"
+                    } else {
+                        allErrors += 'Failed to verify JetBrains authorization token: ' + (err.message || err) + '\n';
+                    }
                     resolve(false);
                 } else {
                     console.log(jwtKey.modeName + ": payload " + JSON.stringify(payload, null, '  '));
