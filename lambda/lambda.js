@@ -17,24 +17,9 @@ function prepareKey(modeName, json, handler) {
         const keyPem = jwkToPem(key);
         selectedKeys.push({
                 modeName: modeName,
-                algorithms: [ourAlg],
-                jwksGetKey: function (header, callback) {
-                    let theirKid = header.kid || null;
-                    let theirAlg = header.alg;
-
-                    if (ourAlg !== theirAlg) {
-                        callback(new Error("Unknown alg"), null);
-                        return;
-                    }
-
-                    if (ourKid !== theirKid) {
-                        callback(new Error("Unknown kid"), null);
-                        return;
-                    }
-
-                    callback(null, keyPem);
-                },
-
+                algorithm: ourAlg,
+                kid: ourKid,
+                pem: keyPem,
                 verifyCallback: payload => handler(payload)
             }
         );
@@ -92,19 +77,34 @@ async function handler(request) {
         return errorResponse(401, 'Failed to parse JetBrains authorization token')
     }
 
+    let decodedToken
+    try {
+        decodedToken = jwt.decode(token)
+    } catch (err) {
+        console.log("Failed to decode JWT", err)
+        return errorResponse(401, 'Failed to parse JetBrains authorization token')
+    }
+
+    const matchingKeys = allJwtKeys.filter(jwtKey =>
+        jwtKey.kid === decodedToken.kid && jwtKey.algorithm in decodedToken.algorithms)
+
+    if (!matchingKeys) {
+        errorResponse(401, "No keys match the JetBrains authorization token")
+    }
+
     let allErrors = ''
 
-    for (const jwtKey of allJwtKeys) {
+    for (const jwtKey of matchingKeys) {
         let result = await new Promise((resolve) => {
-            jwt.verify(token, jwtKey.jwksGetKey, {algorithms: jwtKey.algorithms}, (err, payload) => {
+            jwt.verify(token, jwtKey.pem, {algorithms: [jwtKey.algorithms]}, (err, payload) => {
                 if (err != null || payload === undefined || payload === null) {
                     console.log(jwtKey.modeName + ': Failed to verify token.', (err.message || err));
                     allErrors += 'Failed to verify JetBrains authorization token: '+ (err.message || err) + '\n';
                     resolve(false);
-                    return;
+                } else {
+                    console.log(jwtKey.modeName + ": payload " + JSON.stringify(payload, null, '  '));
+                    resolve(jwtKey.verifyCallback(payload));
                 }
-                console.log(jwtKey.modeName + ": payload " + JSON.stringify(payload, null, '  '));
-                resolve(jwtKey.verifyCallback(payload));
             });
         });
 
@@ -120,7 +120,7 @@ exports.handler = async (event, context) => {
         return await handler(request)
     } catch (err) {
         // token exists but is invalid
-        console.log('Crashed to verify a token', err);
-        return errorResponse(500, 'Failed to verify JetBrains authorization token: ' + err);
+        console.log('Uncaught exception when verifying a token', err);
+        return errorResponse(500, 'Unexpected error verifying JetBrains authorization token: ' + err);
     }
 };
