@@ -17,7 +17,7 @@ function prepareKey(modeName, json, handler) {
         const keyPem = jwkToPem(key);
         selectedKeys.push({
                 modeName: modeName,
-                algorithm: ourAlg,
+                alg: ourAlg,
                 kid: ourKid,
                 pem: keyPem,
                 verifyCallback: payload => handler(payload)
@@ -65,6 +65,10 @@ function errorResponse(status, message) {
     };
 }
 
+function kidMatch(jwtKid, headerKid) {
+    return jwtKid === headerKid || (jwtKid === null && headerKid === undefined)
+}
+
 async function handler(request) {
     //see https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-examples.html
     const {authorization = []} = request.headers;
@@ -77,26 +81,24 @@ async function handler(request) {
         return errorResponse(401, 'Failed to parse JetBrains authorization token')
     }
 
-    let decodedToken
-    try {
-        decodedToken = jwt.decode(token)
-    } catch (err) {
-        console.log("Failed to decode JWT", err)
+    const decodedToken = jwt.decode(token, {complete: true})
+    if (!decodedToken) {
+        console.log("Failed to decode JWT " + token)
         return errorResponse(401, 'Failed to parse JetBrains authorization token')
     }
 
     const matchingKeys = allJwtKeys.filter(jwtKey =>
-        jwtKey.kid === decodedToken.kid && jwtKey.algorithm in decodedToken.algorithms)
+        kidMatch(jwtKey.kid, decodedToken.header.kid) && jwtKey.alg === decodedToken.header.alg)
 
-    if (!matchingKeys) {
-        errorResponse(401, "No keys match the JetBrains authorization token")
+    if (matchingKeys.length === 0) {
+        return errorResponse(401, "No keys match the JetBrains authorization token")
     }
 
     let allErrors = ''
 
     for (const jwtKey of matchingKeys) {
         let result = await new Promise((resolve) => {
-            jwt.verify(token, jwtKey.pem, {algorithms: [jwtKey.algorithms]}, (err, payload) => {
+            jwt.verify(token, jwtKey.pem, {algorithms: [jwtKey.alg]}, (err, payload) => {
                 if (err != null || payload === undefined || payload === null) {
                     console.log(jwtKey.modeName + ': Failed to verify token.', (err.message || err));
                     if (err.name === "TokenExpiredError") {
