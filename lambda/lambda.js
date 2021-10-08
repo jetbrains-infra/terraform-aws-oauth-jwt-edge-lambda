@@ -89,42 +89,42 @@ async function handler(request) {
         return errorResponse(401, 'Failed to parse JetBrains authorization token')
     }
 
+    console.log("JWT payload: " + JSON.stringify(decodedToken.payload, null, '  '));
+
     const matchingKeys = allJwtKeys.filter(jwtKey =>
         kidMatch(jwtKey.kid, decodedToken.header.kid) && jwtKey.alg === decodedToken.header.alg)
 
     if (matchingKeys.length === 0) {
+        console.log("No matching JWKS for JWT.")
         return errorResponse(401, "No keys match the JetBrains authorization token")
     }
 
-    let errorMessage = ''
-
-    for (const jwtKey of matchingKeys) {
-        let result = await new Promise((resolve) => {
-            jwt.verify(token, jwtKey.pem, {algorithms: [jwtKey.alg]}, (err, payload) => {
-                if (err != null || payload === undefined || payload === null) {
-                    console.log(jwtKey.modeName + ': Failed to verify token.', (err.message || err));
-                    if (err.name === "TokenExpiredError") {
-                        errorMessage = "JetBrains authorization token expired.\n"
-                    } else {
-                        errorMessage = 'Failed to verify JetBrains authorization token: ' + (err.message || err) + '\n';
-                    }
-                    resolve(false);
-                } else {
-                    console.log(jwtKey.modeName + ": payload " + JSON.stringify(payload, null, '  '));
-                    let res = jwtKey.verifyCallback(payload);
-                    if (!res) {
-                        console.log("Email " + payload.email + " not in the private preview list")
-                        errorMessage = "Email not in the private preview list.\n"
-                    }
-                    resolve(res);
-                }
-            });
-        });
-
-        if (result === true) return request;
+    if (matchingKeys.length > 1) {
+        console.log("WARN: Several matching JWKS for JWT, the first one will be used.")
     }
 
-    return errorResponse(403, errorMessage)
+    const jwtKey = matchingKeys[0]
+    return await new Promise((resolve) => {
+        jwt.verify(token, jwtKey.pem, {algorithms: [jwtKey.alg]}, (err, payload) => {
+            if (err != null || payload === undefined || payload === null) {
+                console.log(jwtKey.modeName + ': Failed to verify token.', (err.message || err));
+                let errorMessage;
+                if (err.name === "TokenExpiredError") {
+                    errorMessage = "JetBrains authorization token expired.\n"
+                } else {
+                    errorMessage = 'Failed to verify JetBrains authorization token: ' + (err.message || err) + '\n';
+                }
+                resolve(errorResponse(403, errorMessage))
+            } else {
+                if (jwtKey.verifyCallback(payload)) {
+                    resolve(request);
+                } else {
+                    console.log("Email " + payload.email + " not in the private preview list")
+                    resolve(errorResponse(403, "Email not in the private preview list.\n"))
+                }
+            }
+        });
+    });
 }
 
 exports.handler = async (event, context) => {
