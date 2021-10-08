@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const jwkToPem = require('jwk-to-pem');
 
 // if the file is missing, make sure build-lambda.js was executed
-const {CLIENT_SECRET: {jba: jba_keys_data = {}, jbt: jbt_keys_data = {}}} = require('./jwks-generated.js');
+const {CLIENT_SECRET: {jba: jba_keys_data = {}}, PREVIEW_JBA_EMAILS: {emails: previewEmailList = []}} = require('./jwks-generated.js');
 
 function prepareKey(modeName, json, handler) {
     console.log("The JWKS for " + modeName + " :")
@@ -28,9 +28,11 @@ function prepareKey(modeName, json, handler) {
     return selectedKeys;
 }
 
-const jbaJwtKeys = prepareKey('JBA', jba_keys_data, ({email = '', sub = ''}) => sub.toString().toLowerCase().endsWith("@jetbrains.com") || email.toString().toLowerCase().endsWith("@jetbrains.com"));
-const jbtJwtKeys = prepareKey('JBT', jbt_keys_data, ({orgDomain = ''}) => orgDomain.toString().toLowerCase() === 'jetbrains');
-const allJwtKeys = [...jbtJwtKeys, ...jbaJwtKeys];
+const previewEmails = new Set(previewEmailList.map(email => email.toLowerCase()));
+
+const jbaJwtKeys = prepareKey('JBA', jba_keys_data, (payload) => previewEmails.has(payload.email.toLowerCase()));
+
+const allJwtKeys = jbaJwtKeys;
 
 function parseAuthorizationHeader(authorization) {
     for (let i = 0; i < authorization.length; i++) {
@@ -94,7 +96,7 @@ async function handler(request) {
         return errorResponse(401, "No keys match the JetBrains authorization token")
     }
 
-    let allErrors = ''
+    let errorMessage = ''
 
     for (const jwtKey of matchingKeys) {
         let result = await new Promise((resolve) => {
@@ -102,14 +104,19 @@ async function handler(request) {
                 if (err != null || payload === undefined || payload === null) {
                     console.log(jwtKey.modeName + ': Failed to verify token.', (err.message || err));
                     if (err.name === "TokenExpiredError") {
-                        allErrors += "JetBrains authorization token expired.\n"
+                        errorMessage = "JetBrains authorization token expired.\n"
                     } else {
-                        allErrors += 'Failed to verify JetBrains authorization token: ' + (err.message || err) + '\n';
+                        errorMessage = 'Failed to verify JetBrains authorization token: ' + (err.message || err) + '\n';
                     }
                     resolve(false);
                 } else {
                     console.log(jwtKey.modeName + ": payload " + JSON.stringify(payload, null, '  '));
-                    resolve(jwtKey.verifyCallback(payload));
+                    let res = jwtKey.verifyCallback(payload);
+                    if (!res) {
+                        console.log("Email " + payload.email + " not in the private preview list")
+                        errorMessage = "Email not in the private preview list.\n"
+                    }
+                    resolve(res);
                 }
             });
         });
@@ -117,7 +124,7 @@ async function handler(request) {
         if (result === true) return request;
     }
 
-    return errorResponse(403, allErrors)
+    return errorResponse(403, errorMessage)
 }
 
 exports.handler = async (event, context) => {
