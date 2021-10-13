@@ -14,6 +14,10 @@ data "http" "jba_jwks" {
   url = local.jba_jwks_url
 }
 
+data "local_file" "jba_preview_emails" {
+  filename = "${path.module}/../../jba-preview-emails.json"
+}
+
 locals {
   jba_jwks_url = "https://oauth.account.jetbrains.com/.well-known/jwks.json"
   jbt_jwks_url = "https://jetbrains.team/oauth/jwks.json"
