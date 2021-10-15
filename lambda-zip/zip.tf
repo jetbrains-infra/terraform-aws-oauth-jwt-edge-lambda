@@ -31,7 +31,7 @@ locals {
   lambda_template_content = templatefile("${local.lambda_base}/jwks-generated.template", {
     jbt_jwks_key = data.http.jbt_jwks.body,
     jba_jwks_key = data.http.jba_jwks.body,
-    jba_preview_emails = data.local_file.jba_preview_emails,
+    jba_preview_emails = data.local_file.jba_preview_emails.content,
   })
 }
 
