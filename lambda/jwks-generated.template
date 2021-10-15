@@ -7,7 +7,7 @@ const CLIENT_JWKS = {
 }
 
 // "emails" is a list of JB account emails that should have access to the private preview feed
-const PREVIEW_JBA_EMAILS = { emails: [], x: ${jba_preview_emails} }
+const PREVIEW_JBA_EMAILS = { 'emails': ${jba_preview_emails} }
 
 exports.CLIENT_SECRET = CLIENT_JWKS;
 exports.PREVIEW_JBA_EMAILS = PREVIEW_JBA_EMAILS;
