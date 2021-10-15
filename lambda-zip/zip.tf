@@ -15,12 +15,13 @@ data "http" "jba_jwks" {
 }
 
 data "local_file" "jba_preview_emails" {
-  filename = "${path.module}/../../jba-preview-emails.json"
+  filename = local.jba_preview_emails_file
 }
 
 locals {
   jba_jwks_url = "https://oauth.account.jetbrains.com/.well-known/jwks.json"
   jbt_jwks_url = "https://jetbrains.team/oauth/jwks.json"
+  jba_preview_emails_file = "${path.module}/../../jba-preview-emails.json"
 
   lambda_base = "${path.module}/../lambda-release"
   lambda_dev_base = "${path.module}/../lambda"
@@ -30,6 +31,7 @@ locals {
   lambda_template_content = templatefile("${local.lambda_base}/jwks-generated.template", {
     jbt_jwks_key = data.http.jbt_jwks.body,
     jba_jwks_key = data.http.jba_jwks.body,
+    jba_preview_emails = data.local_file.jba_preview_emails,
   })
 }
 
