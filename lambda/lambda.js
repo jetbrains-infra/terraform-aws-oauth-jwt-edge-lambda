@@ -28,7 +28,11 @@ function prepareKey(modeName, json, handler) {
     return selectedKeys;
 }
 
-const jbaJwtKeys = prepareKey('JBA', jba_keys_data, ({email = '', sub = ''}) => sub.toString().toLowerCase().endsWith("@jetbrains.com") || email.toString().toLowerCase().endsWith("@jetbrains.com"));
+const jbaJwtKeys = prepareKey('JBA', jba_keys_data,
+    ({email = '', sub = '', client_id = ''}) =>
+        sub.toString().toLowerCase().endsWith("@jetbrains.com") ||
+        email.toString().toLowerCase().endsWith("@jetbrains.com") ||
+        client_id.toString().startsWith("space-dl-"));
 const jbtJwtKeys = prepareKey('JBT', jbt_keys_data, ({orgDomain = ''}) => orgDomain.toString().toLowerCase() === 'jetbrains');
 const allJwtKeys = [...jbtJwtKeys, ...jbaJwtKeys];
 
